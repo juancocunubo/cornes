@@ -606,21 +606,21 @@ def build_interface(editor_instance: VisualBlockEditor) -> None:
     # Initial population of workspace blocks and variables
     refresh_workspace_ui()
 
-    # Resize handler to keep full window layout responsive
-    def _on_resize(sender, app_data):
-        width, height = app_data[0], app_data[1]
-        dpg.set_item_width("main_window", width)
-        dpg.set_item_height("main_window", height)
-        # Adjust center workspace and bottom console
-        available_w = max(900, width - 40)
-        dpg.set_item_width("console_window", available_w)
-        dpg.set_item_width("console_output_display", available_w - 25)
-        center_w = max(400, available_w - 490)
-        dpg.set_item_width("workspace_child", center_w)
+    # Viewport resize callback to keep layout responsive
+    def _on_viewport_resize(sender, app_data):
+        try:
+            vw = int(dpg.get_viewport_client_width())
+            vh = int(dpg.get_viewport_client_height())
+            available_w = max(900, vw - 35)
+            dpg.set_item_width("console_window", available_w)
+            dpg.set_item_width("console_output_display", available_w - 25)
+            center_w = max(450, available_w - 490)
+            dpg.set_item_width("workspace_child", center_w)
+            dpg.set_item_width("blocks_container", center_w - 20)
+        except Exception:
+            pass
 
-    with dpg.item_handler_registry(tag="viewport_resize_handler"):
-        dpg.add_item_resize_handler(callback=_on_resize)
-    dpg.bind_item_handler_registry("main_window", "viewport_resize_handler")
+    dpg.set_viewport_resize_callback(_on_viewport_resize)
 
     dpg.set_primary_window("main_window", True)
     dpg.setup_dearpygui()
