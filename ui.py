@@ -345,14 +345,40 @@ def build_interface(editor_instance: VisualBlockEditor) -> None:
     EDITOR = editor_instance
 
     dpg.create_context()
-    dpg.create_viewport(
-        title="🐾 PuRRgramacion - Python visual de bloques",
-        width=1340,
-        height=820,
-        resizable=True,
-        min_width=1100,
-        min_height=650,
-    )
+
+    # Setup icons and logo textures
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    logo_path = os.path.join(base_dir, "LOGO.png")
+    ico_path = os.path.join(base_dir, "favicon.ico")
+
+    small_icon_path = ico_path if os.path.exists(ico_path) else (logo_path if os.path.exists(logo_path) else "")
+    large_icon_path = ico_path if os.path.exists(ico_path) else (logo_path if os.path.exists(logo_path) else "")
+
+    viewport_kwargs = {
+        "title": "🐾 PuRRgramacion - Python visual de bloques",
+        "width": 1340,
+        "height": 820,
+        "resizable": True,
+        "min_width": 1100,
+        "min_height": 650,
+    }
+    if small_icon_path:
+        viewport_kwargs["small_icon"] = small_icon_path
+    if large_icon_path:
+        viewport_kwargs["large_icon"] = large_icon_path
+
+    dpg.create_viewport(**viewport_kwargs)
+
+    # Load LOGO.png as static texture for GUI rendering
+    has_logo = False
+    if os.path.exists(logo_path):
+        try:
+            w, h, c, data = dpg.load_image(logo_path)
+            with dpg.texture_registry(show=False):
+                dpg.add_static_texture(width=w, height=h, default_value=data, tag="app_logo_texture")
+            has_logo = True
+        except Exception as e:
+            print(f"No se pudo cargar textura de LOGO.png: {e}")
 
     _apply_theme()
 
@@ -391,9 +417,25 @@ def build_interface(editor_instance: VisualBlockEditor) -> None:
                 dpg.add_menu_item(label="Exportar a script.py", callback=lambda: EDITOR.export_python_file())
 
             with dpg.menu(label="Help"):
-                dpg.add_menu_item(label="Acerca de PuRRgramacion", callback=lambda: None)
+                def _show_about():
+                    about_tag = "about_modal"
+                    if dpg.does_item_exist(about_tag):
+                        dpg.delete_item(about_tag)
+                    with dpg.window(label="Acerca de PuRRgramacion", tag=about_tag, modal=True, width=420, height=230, pos=(450, 240)):
+                        with dpg.group(horizontal=True):
+                            if has_logo:
+                                dpg.add_image("app_logo_texture", width=70, height=70)
+                            with dpg.group():
+                                dpg.add_text("PuRRgramacion", color=(30, 45, 65))
+                                dpg.add_text("Entorno visual de bloques Python")
+                                dpg.add_text("Version 1.0.0")
+                        dpg.add_separator()
+                        dpg.add_text("Inspirado en la programacion visual interactiva.")
+                        dpg.add_button(label="Aceptar", width=90, callback=lambda: dpg.delete_item(about_tag))
 
-        # 2. Top Toolbar (New, Open, Save, 🐾 Run, Debug, Option, 🐾 🐍)
+                dpg.add_menu_item(label="Acerca de PuRRgramacion", callback=_show_about)
+
+        # 2. Top Toolbar (New, Open, Save, 🐾 Run, Debug, Option, LOGO.png)
         with dpg.group(horizontal=True):
             dpg.add_button(label="📄 New", width=70, height=32, callback=lambda: (EDITOR.clear_workspace(), refresh_workspace_ui()))
             dpg.add_button(label="📂 Open", width=70, height=32, callback=lambda: (EDITOR.load_from_file(), refresh_workspace_ui()))
@@ -406,9 +448,12 @@ def build_interface(editor_instance: VisualBlockEditor) -> None:
             dpg.add_button(label="🐞 Debug", width=75, height=32, callback=_show_code_viewer_modal)
             dpg.add_button(label="⚙ Option", width=75, height=32, callback=lambda: None)
             
-            # Right branding matching screenshot
-            dpg.add_spacer(width=680)
-            dpg.add_text("🐾 🐍", color=(50, 70, 95))
+            # Right branding with LOGO.png
+            dpg.add_spacer(width=620, tag="toolbar_spacer")
+            if has_logo:
+                dpg.add_image("app_logo_texture", width=36, height=36)
+            else:
+                dpg.add_text("🐾 🐍", color=(50, 70, 95))
 
         dpg.add_separator()
 
@@ -617,6 +662,8 @@ def build_interface(editor_instance: VisualBlockEditor) -> None:
             center_w = max(450, available_w - 490)
             dpg.set_item_width("workspace_child", center_w)
             dpg.set_item_width("blocks_container", center_w - 20)
+            if dpg.does_item_exist("toolbar_spacer"):
+                dpg.set_item_width("toolbar_spacer", max(50, vw - 600))
         except Exception:
             pass
 

@@ -2,7 +2,9 @@
 
 Entorno de desarrollo visual interactivo basado en bloques con sentencias directas de Python, diseñado para facilitar el aprendizaje y prototipado rápido de programación en Python.
 
-![PuRRgramacion](https://raw.githubusercontent.com/juancocunubo/cornes/main/preview.png)
+<p align="center">
+  <img src="./LOGO.png" alt="PuRRgramacion Logo" width="180"/>
+</p>
 
 ## 🚀 Características Principales
 
